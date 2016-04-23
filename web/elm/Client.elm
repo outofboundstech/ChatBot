@@ -14,8 +14,19 @@ type Action
   | UpdateConnectionStatus Bool
 
 
+type alias Message =
+  { from : String
+  , contents : String
+  }
+
+
+type alias History =
+  List Message
+
+
 type alias Model =
   { connected : Bool
+  , history : History
   }
 
 
@@ -28,13 +39,24 @@ scrollable =
     ]
 
 
-view : Signal.Address Action -> Model -> Html.Html
+viewHistory : History -> List Html
+viewHistory history =
+  List.map
+    (\msg ->
+      if "__system__" == msg.from then
+        div [ class "alert" ] [ text msg.contents ]
+      else if "__server__" == msg.from then
+        div [ class "alert alert-info text-right" ] [ text msg.contents ]
+      else
+        div [ class "alert alert-success text-left" ] [ text msg.contents ]
+    )
+    history
+
+
+view : Signal.Address Action -> Model -> Html
 view address model =
   div [ id "container" ]
-    [ div [ id "history", class "well", scrollable ]
-      [ p [ class "bg-success" ] [ text "Hello, ChatBot!" ]
-      , p [ class "bg-info" ] [ text "Hello, World!" ]
-      ]
+    [ div [ id "history", class "well", scrollable ] (viewHistory model.history)
     , div [ class "form-group input-group" ]
       [ input [ type' "text", placeholder "Enter your message...", class "form-control" ] []
       , span [ class "input-group-btn" ]
@@ -46,6 +68,12 @@ view address model =
 init : ( Model, Effects Action )
 init =
   ( { connected = False
+    , history =
+      [ { from = "__system__", contents = "Socket connected" }
+      , { from = "__client__", contents = "Hello, ChatBot!" }
+      , { from = "__server__", contents = "Hello, World!" }
+      , { from = "__system__", contents = "Socket disconnected" }
+      ]
     }
   , Effects.none
   )
