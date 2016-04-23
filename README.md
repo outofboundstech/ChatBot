@@ -1,4 +1,5 @@
 # ChatBot
+<<<<<<< HEAD
 
 To start your Phoenix app:
 
@@ -17,3 +18,6 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
   * Docs: http://hexdocs.pm/phoenix
   * Mailing list: http://groups.google.com/group/phoenix-talk
   * Source: https://github.com/phoenixframework/phoenix
+=======
+Free Chats Unlimited. Copyright 2016 Marcel Oomens
+>>>>>>> aeafb8ef77ce1abac6e7308dba1ca23fa6a122bd
