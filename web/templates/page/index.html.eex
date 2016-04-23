@@ -1,6 +1,6 @@
 <div class="jumbotron">
-  <h2>ChatBot client</h2>
-  <p class="lead">The browser client for ChatBot interaction.</p>
+  <h2>Free Chats Unlimited</h2>
+  <p class="lead">Chat freely with the Free Press Unlimited chatbot.</p>
   <div id="client"></div>
 </div>
 
@@ -9,28 +9,31 @@
     <h4>Resources</h4>
     <ul>
       <li>
-        <a href="http://phoenixframework.org/docs/overview">Guides</a>
+        <a href="https://github.com/outofboundstech/ChatBot">Source</a>
       </li>
       <li>
-        <a href="http://hexdocs.pm/phoenix">Docs</a>
+        <a href="http://phoenixframework.org/docs/overview">Phoenix Guides</a>
       </li>
       <li>
-        <a href="https://github.com/phoenixframework/phoenix">Source</a>
+        <a href="http://hexdocs.pm/phoenix">Hex Docs</a>
+      </li>
+      <li>
+        <a href="http://elm-lang.org/docs">Elm Docs</a>
       </li>
     </ul>
   </div>
 
   <div class="col-lg-6">
-    <h4>Help</h4>
+    <h4>Information</h4>
     <ul>
       <li>
-        <a href="http://groups.google.com/group/phoenix-talk">Mailing list</a>
+        <a href="https://freepressunlimited.org/">Free Press Unlimited</a>
       </li>
       <li>
-        <a href="http://webchat.freenode.net/?channels=elixir-lang">#elixir-lang on freenode IRC</a>
+        <a href="https://www.dabangasudan.org/">Radio Dabanga</a>
       </li>
       <li>
-        <a href="https://twitter.com/elixirphoenix">@elixirphoenix</a>
+        <a href="https://www.github.com/marceloomens">Marcel Oomens</a>
       </li>
     </ul>
   </div>
