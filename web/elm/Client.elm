@@ -4,7 +4,7 @@ module Client where
 import Effects exposing (Effects, Never)
 import Html exposing (Attribute, Html, button, div, input, p, span, text)
 import Html.Attributes exposing (class, id, placeholder, style, type', value)
-import Html.Events as Events exposing (on, onClick, targetValue)
+import Html.Events as Events exposing (on, onClick, keyCode, targetValue)
 import StartApp
 import Task
 
@@ -21,8 +21,7 @@ type alias History =
 
 
 type alias Model =
-  { connected : Bool
-  , draft : String
+  { draft : String
   , history : History
   }
 
@@ -30,9 +29,9 @@ type alias Model =
 type Action
   = NoOp
   | UpdateDraft String
-  | Send
+  | Send String
   | Receive String
-  | UpdateConnectionStatus Bool
+  | Log String
 
 
 -- UPDATE
@@ -41,13 +40,16 @@ update action model =
   case action of
     UpdateDraft message ->
       ( { model | draft = message }, Effects.none )
-    Send ->
+    Send "" ->
+      -- Silently ignore empty messages
+      ( model, Effects.none )
+    Send contents ->
       -- Send message off to the server (outbox.send)
       let
         task =
-          Signal.send outbox.address model.draft
+          Signal.send outbox.address contents
           `Task.andThen` (\_ -> Task.succeed NoOp)
-        message = { from = "__client__", contents = model.draft }
+        message = { from = "__client__", contents = contents }
         history = message :: model.history
       in
         ( { model | history = history, draft = "" }, task |> Effects.task )
@@ -57,11 +59,14 @@ update action model =
         history = message :: model.history
       in
         ( { model | history = history } , Effects.none )
-    UpdateConnectionStatus status ->
-      -- How do I communicate this information between Elm and socket?
-      ( { model | connected = status }, Effects.none )
+    Log contents ->
+      let
+        message = { from = "__system__", contents = contents }
+        history = message :: model.history
+      in
+        ( { model | history = history } , Effects.none )
     NoOp ->
-      ( model, Effects.none)
+      ( model, Effects.none )
 
 
 -- VIEW styles
@@ -96,15 +101,29 @@ onInput address action =
   on "input" targetValue (\value -> Signal.message address (action value))
 
 
+onReturn : Signal.Address Action -> Action -> Attribute
+onReturn address action =
+  on "keypress" keyCode
+    (\code ->
+      if 13 == code then
+        Signal.message address action
+      else
+        Signal.message address NoOp
+    )
+
+
 -- VIEW
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [ id "container" ]
     [ div [ id "history", class "well", scrollableStyle ] (historyView model.history)
     , div [ class "form-group input-group" ]
-      [ input [ type' "text", placeholder "Enter your message...", class "form-control", value model.draft, onInput address UpdateDraft ] []
+      [ input [ type' "text", placeholder "Enter your message...", class "form-control", value model.draft
+        , onInput address UpdateDraft
+        , onReturn address (Send model.draft)
+        ] []
       , span [ class "input-group-btn" ]
-        [ button [ class "btn btn-primary", onClick address Send ] [ text "Send" ] ]
+        [ button [ class "btn btn-primary", onClick address (Send model.draft) ] [ text "Send" ] ]
       ]
     ]
 
@@ -112,8 +131,7 @@ view address model =
 -- BOOKKEEPING
 init : ( Model, Effects Action )
 init =
-  ( { connected = False
-    , draft = ""
+  ( { draft = ""
     , history = []
     }
   , Effects.none
@@ -124,7 +142,7 @@ app : StartApp.App Model
 app =
   StartApp.start
     { init = init
-    , inputs = [ Signal.map Receive message ]
+    , inputs = [ inputs ]
     , update = update
     , view = view
     }
@@ -141,7 +159,15 @@ port tasks =
 
 
 -- INTEROP
-port message : Signal String
+port inbox : Signal String
+port log : Signal String
+
+
+inputs : Signal Action
+inputs =
+  Signal.merge
+    (Signal.map Receive inbox)
+    (Signal.map Log log)
 
 
 outbox : Signal.Mailbox String
