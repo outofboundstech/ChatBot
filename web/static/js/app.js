@@ -21,7 +21,7 @@ import "phoenix_html"
 import socket from "./socket"
 
 var client = document.getElementById('client')
-  , app = Elm.embed(Elm.Client, client);
+  , app = Elm.embed(Elm.Client, client, { inbox: "", log: "" });
 
 var handle = app.ports.inbox.send, log = app.ports.log.send;
 
