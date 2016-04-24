@@ -52,8 +52,9 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 // from connect if you don't care about authentication.
 
 var client = document.getElementById('client')
-  , app = Elm.embed(Elm.Client, client, { inbox: "", log: "" })
+  , app = Elm.embed(Elm.Client, client, { connected: false, inbox: "", log: "" })
 
+var connected = app.ports.connected.send;
 var handle = app.ports.inbox.send;;
 var log = app.ports.log.send
 
@@ -71,10 +72,10 @@ socket.connect()
 // Now that you are connected, you can join channels with a topic:
 let channel = socket.channel("chats:lobby", {})
 
-channel.onClose( () => log("Channel chats:lobby closed"))
-channel.onError( () => log("Channel chats:lobby dropped"))
+channel.onClose( () => { connected(false), log("Channel chats:lobby closed") })
+channel.onError( () => { connected(false), log("Channel chats:lobby dropped") })
 channel.join()
-  .receive("ok", resp => { log("Channel chats:lobby joined") })
+  .receive("ok", resp => { connected(true), log("Channel chats:lobby joined") })
   .receive("error", resp => { log("Unable to join channel chats:lobby") })
 
 function transport(payload) {

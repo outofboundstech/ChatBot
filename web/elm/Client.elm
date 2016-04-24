@@ -2,8 +2,8 @@ module Client where
 
 
 import Effects exposing (Effects, Never)
-import Html exposing (Attribute, Html, button, div, input, p, span, text)
-import Html.Attributes exposing (class, id, placeholder, style, type', value)
+import Html exposing (Attribute, Html, a, button, div, input, li, p, span, text, ul)
+import Html.Attributes exposing (attribute, class, disabled, href, id, placeholder, style, type', value)
 import Html.Events as Events exposing (on, onClick, keyCode, targetValue)
 import StartApp
 import Task
@@ -21,13 +21,15 @@ type alias History =
 
 
 type alias Model =
-  { draft : String
+  { connected : Bool
+  , draft : String
   , history : History
   }
 
 
 type Action
   = NoOp
+  | UpdateLinkStatus Bool
   | UpdateDraft String
   | Send String
   | Receive String
@@ -38,6 +40,8 @@ type Action
 update : Action -> Model -> ( Model, Effects Action )
 update action model =
   case action of
+    UpdateLinkStatus connected ->
+      ( { model | connected = connected }, Effects.none )
     UpdateDraft message ->
       ( { model | draft = message }, Effects.none )
     Send "" ->
@@ -69,7 +73,7 @@ update action model =
       ( model, Effects.none )
 
 
--- VIEW styles
+-- VIEW attributes
 scrollableStyle : Attribute
 scrollableStyle =
   style
@@ -77,22 +81,6 @@ scrollableStyle =
     , ("overflow", "scroll")
     , ("background-color", "white")
     ]
-
-
--- VIEW helper functions
-historyView : History -> List Html
-historyView history =
-  List.foldl
-    (\msg acc  ->
-      if "__system__" == msg.from then
-        (div [ class "alert" ] [ text msg.contents ]) :: acc
-      else if "__server__" == msg.from then
-        (div [ class "alert alert-info text-right" ] [ text msg.contents ]) :: acc
-      else
-        (div [ class "alert alert-success text-left" ] [ text msg.contents ]) :: acc
-    )
-    []
-    history
 
 
 -- VIEW event helpers
@@ -112,18 +100,51 @@ onReturn address action =
     )
 
 
+-- VIEW helper functions
+connectedView : Bool -> List Html
+connectedView isConnected =
+  if isConnected then
+    [ span [ class "glyphicon glyphicon-ok" ] [ ] ]
+  else
+    [ span [ class "glyphicon glyphicon-remove" ] [ ] ]
+
+
+historyView : History -> List Html
+historyView history =
+  List.foldl
+    (\msg acc  ->
+      if "__system__" == msg.from then
+        (div [ class "alert" ] [ text msg.contents ]) :: acc
+      else if "__server__" == msg.from then
+        (div [ class "alert alert-info text-right" ] [ text msg.contents ]) :: acc
+      else
+        (div [ class "alert alert-success text-left" ] [ text msg.contents ]) :: acc
+    )
+    []
+    history
+
+
 -- VIEW
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [ id "container" ]
     [ div [ id "history", class "well", scrollableStyle ] (historyView model.history)
     , div [ class "form-group input-group" ]
-      [ input [ type' "text", placeholder "Enter your message...", class "form-control", value model.draft
+      [ span [ class "input-group-addon" ] (connectedView model.connected)
+      , input [ type' "text", placeholder "Enter your message...", class "form-control", value model.draft
         , onInput address UpdateDraft
         , onReturn address (Send model.draft)
         ] []
-      , span [ class "input-group-btn" ]
-        [ button [ class "btn btn-primary", onClick address (Send model.draft) ] [ text "Send" ] ]
+      , div [ class "input-group-btn" ]
+        [ button [ class "btn btn-primary", disabled (not model.connected), onClick address (Send model.draft) ] [ text "Send" ]
+        , button [ class "btn btn-primary dropdown-toggle", disabled (not model.connected), attribute "data-toggle" "dropdown" ]
+          [ span [ class "caret"] []
+          , span [ class "sr-only" ] [ text "Toggle Dropdown" ]
+          ]
+          , ul [ class "dropdown-menu dropdown-menu-right", attribute "aria-haspopup" "true", attribute "aria-expanded" "false"]
+            [ li [ ] [ a [ href "#" ] [ text "Image or photo" ] ]
+          ]
+        ]
       ]
     ]
 
@@ -131,7 +152,8 @@ view address model =
 -- BOOKKEEPING
 init : ( Model, Effects Action )
 init =
-  ( { draft = ""
+  ( { connected = False
+    , draft = ""
     , history = []
     }
   , Effects.none
@@ -159,15 +181,18 @@ port tasks =
 
 
 -- INTEROP
+port connected : Signal Bool
 port inbox : Signal String
 port log : Signal String
 
 
 inputs : Signal Action
 inputs =
-  Signal.merge
-    (Signal.map Receive inbox)
-    (Signal.map Log log)
+  Signal.mergeMany
+    [ (Signal.map UpdateLinkStatus connected)
+    , (Signal.map Receive inbox)
+    , (Signal.map Log log)
+    ]
 
 
 outbox : Signal.Mailbox String
