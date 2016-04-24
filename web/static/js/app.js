@@ -22,3 +22,11 @@ import socket from "./socket"
 
 var client = document.getElementById('client')
   , app = Elm.embed(Elm.Client, client);
+
+var handle = app.ports.inbox.send, log = app.ports.log.send;
+
+// Now that you are connected, you can join channels with a topic:
+let channel = socket.channel("chats:lobby", {})
+channel.join()
+  .receive("ok", resp => { console.log("Joined successfully", resp) })
+  .receive("error", resp => { console.log("Unable to join", resp) })
