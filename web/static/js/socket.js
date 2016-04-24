@@ -51,6 +51,15 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 // Finally, pass the token on connect as below. Or remove it
 // from connect if you don't care about authentication.
 
+var client = document.getElementById('client')
+  , app = Elm.embed(Elm.Client, client, { inbox: "", log: "" })
+
+var handle = app.ports.inbox.send;;
+var log = app.ports.log.send
+
+socket.onOpen( () => log("Connection established"))
+socket.onClose( () => log("Connection closed"))
+socket.onError( () => log("Connection dropped"))
 socket.connect()
 
 // Now that you are connected, you can join channels with a topic:
@@ -58,5 +67,25 @@ socket.connect()
 // channel.join()
 //   .receive("ok", resp => { console.log("Joined successfully", resp) })
 //   .receive("error", resp => { console.log("Unable to join", resp) })
+
+// Now that you are connected, you can join channels with a topic:
+let channel = socket.channel("chats:lobby", {})
+
+channel.onClose( () => log("Channel chats:lobby closed"))
+channel.onError( () => log("Channel chats:lobby dropped"))
+channel.join()
+  .receive("ok", resp => { log("Channel chats:lobby joined") })
+  .receive("error", resp => { log("Unable to join channel chats:lobby") })
+
+function transport(payload) {
+  channel.push("ping", payload)
+    .receive("pong", ({payload}) => { handle(payload) })
+    .receive("error", e => { console.log(e) })
+}
+
+// Here's an alternative; could be a cleaner solution:
+// channel.on("pong", ({payload}) => { handle(payload) })
+
+app.ports.transport.subscribe(transport)
 
 export default socket

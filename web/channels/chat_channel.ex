@@ -1,6 +1,8 @@
 defmodule ChatBot.ChatChannel do
   use ChatBot.Web, :channel
 
+  require Logger
+
   def join("chats:lobby", payload, socket) do
     if authorized?(payload) do
       {:ok, socket}
@@ -12,7 +14,10 @@ defmodule ChatBot.ChatChannel do
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
   def handle_in("ping", payload, socket) do
-    {:reply, {:ok, payload}, socket}
+    {:reply, {:pong, %{payload: payload}}, socket}
+    # Here's an alternative; could be a cleaner solution:
+    # push socket, "pong", %{payload: payload}
+    # {:noreply, socket}
   end
 
   # It is also common to receive messages from the client and

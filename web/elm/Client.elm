@@ -175,6 +175,6 @@ outbox =
   Signal.mailbox ""
 
 
-port transmit : Signal String
-port transmit =
+port transport : Signal String
+port transport =
   outbox.signal
