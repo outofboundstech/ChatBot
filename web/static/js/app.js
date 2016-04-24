@@ -21,4 +21,4 @@ import "phoenix_html"
 // import socket from "./socket"
 
 var client = document.getElementById('client')
-  , app = Elm.embed(Elm.Client, client);
+  , app = Elm.embed(Elm.Client, client, { message: "" });
