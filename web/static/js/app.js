@@ -27,7 +27,28 @@ var connected = app.ports.connected.send
 
 import {Socket} from "phoenix"
 
-let socket = new Socket("/socket", {params: {token: window.userToken}})
+var bearer_token = docCookies.getItem("bearer_token") || (() => {
+    // Make an xhr request to obtain a bearer token
+    var resource = "/authenticate"
+      , timeout = 2000 // Terminate after 2 secs.
+      , xhr = new XMLHttpRequest()
+    // See https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
+    // for comprehensive documentation of the XMLHttpRequest object
+    xhr.open("POST", resource)
+    xhr.timeout = timeout
+    // xhr.ontimeout = function() {
+    // };
+    xhr.onreadystatechange = function() {
+      if (4 == xhr.readyState && 200 == xhr.status) {
+        var data = JSON.parse(xhr.responseText)
+        docCookies.setItem("bearer_token",data.bearer_token)
+        return data.bearer_token
+      }
+    }
+    xhr.send()
+  })()
+
+let socket = new Socket("/socket", {params: {bearer_token: bearer_token}})
 
 socket.onOpen( () => console.log("socket open"))
 socket.onClose( () => console.log("socket close"))
@@ -35,7 +56,7 @@ socket.onError( () => console.log("socket error"))
 
 socket.connect()
 
-let channel = socket.channel("chats:lobby", {})
+let channel = socket.channel("rooms:lobby", {})
 
 channel.onClose( () => { connected(false), log("Connection closed") })
 channel.onError( () => { connected(false), log("Connection dropped") })

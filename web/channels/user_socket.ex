@@ -2,8 +2,8 @@ defmodule ChatBot.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "rooms:*", ChatBot.RoomChannel
-  channel "chats:lobby", ChatBot.ChatChannel
+  channel "rooms:lobby", ChatBot.RoomChannel
+  # channel "chats:lobby", ChatBot.ChatChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -20,7 +20,8 @@ defmodule ChatBot.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket) do
+  def connect(params, socket) do
+    # If bearer_token is present in params then assign token to socket
     {:ok, socket}
   end
 

@@ -78,7 +78,7 @@ scrollableStyle : Attribute
 scrollableStyle =
   style
     [ ("height", "400px")
-    , ("overflow", "scroll")
+    , ("overflow-y", "auto")
     , ("background-color", "white")
     ]
 
