@@ -41,7 +41,7 @@ var bearer_token = docCookies.getItem("bearer_token") || (() => {
     xhr.onreadystatechange = function() {
       if (4 == xhr.readyState && 200 == xhr.status) {
         var data = JSON.parse(xhr.responseText)
-        docCookies.setItem("bearer_token",data.bearer_token)
+        docCookies.setItem("bearer_token", data.bearer_token)
         return data.bearer_token
       }
     }
