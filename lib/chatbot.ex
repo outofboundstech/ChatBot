@@ -9,6 +9,8 @@ defmodule ChatBot do
     children = [
       # Start the endpoint when the application starts
       supervisor(ChatBot.Endpoint, []),
+      # Start the Ecto repository
+      supervisor(ChatBot.Repo, [])
       # Here you could define other workers and supervisors as children
       # worker(ChatBot.Worker, [arg1, arg2, arg3]),
     ]

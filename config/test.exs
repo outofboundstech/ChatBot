@@ -8,3 +8,11 @@ config :chatbot, ChatBot.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+# Configure your database
+config :chatbot, ChatBot.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  database: "chatbot_repo",
+  username: "user",
+  password: "pass",
+  hostname: "localhost"

@@ -31,3 +31,11 @@ config :logger, :console, format: "[$level] $message\n"
 # Do not configure such in production as keeping
 # and calculating stacktraces is usually expensive.
 config :phoenix, :stacktrace_depth, 20
+
+# Configure your database
+config :chatbot, ChatBot.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  database: "chatbot_repo",
+  username: "user",
+  password: "pass",
+  hostname: "localhost"
