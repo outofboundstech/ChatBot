@@ -1,6 +1,8 @@
 defmodule ChatBot.RoomChannel do
   use ChatBot.Web, :channel
 
+  alias ChatBot.FSM.QA
+
   def join("rooms:lobby", payload, socket) do
     if authorized?(payload) do
       {:ok, socket}
@@ -15,22 +17,31 @@ defmodule ChatBot.RoomChannel do
     {:reply, {:pong, %{payload: payload}}, socket}
   end
 
-  def handle_in("ping", payload, socket) do
-    # Read user_id from socket
-    # If user_id not set
-    #   disconnect
-    # Query in-memory data store
-    # If no user data present
-    #   Query long term soorage
-    # If no user data present
-    #   // that's fucked up, how did we get here?
-    # If last_seen < 1 day ago
-    #   {:noreply, socket}
-    # else if last_seen < 7 days ago
-    #   {:reply, {:pong, %{payload: short_form}}, socket}
-    # else
-    #   {:reply, {:pong, %{payload: long_form}}, socket}
-    {:reply, {:pong, %{payload: payload}}, socket}
+  def handle_in("message", payload, socket) do
+    # Read user_id from socket assigns
+    # Do I need to code defensively and check to see if this user is
+    #   authorized for this channel after joining?
+    # Read FSM state from socket assigns
+    # Is an existing FSM in the :waiting state? Then send the message along
+
+    case Map.pop socket.assigns, :fsm do
+      {pid, _} when is_pid(pid) ->
+        QA.request(pid, {self, socket_ref(socket), payload})
+      {nil, _} ->
+        questions = ["What's your name?", "How old are you?",
+          "Where do you live?"]
+        {:ok, pid} = QA.start_link(questions)
+        socket = assign(socket, :fsm, pid)
+        QA.request(pid, {self, socket_ref(socket), payload})
+    end
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:respond, ref, payload}, socket) do
+    # broadcast(socket, "message", %{payload: payload})
+    reply ref, {:ok, %{payload: payload}}
+    {:noreply, socket}
   end
 
   # It is also common to receive messages from the client and

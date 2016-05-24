@@ -34,6 +34,7 @@ defmodule ChatBot.Mixfile do
      {:phoenix_html, "~> 2.4"},
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:gettext, "~> 0.9"},
-     {:cowboy, "~> 1.0"}]
+     {:cowboy, "~> 1.0"},
+     {:gen_fsm, "~> 0.1.0"}]
   end
 end
