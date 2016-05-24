@@ -69,9 +69,8 @@ channel.join()
 
 function transport(payload) {
   channel.push("message", payload)
-    // message will not return `pong`; but `ok` or `error`
-    .receive("ok", ({payload}) => { handle(payload) })
     .receive("reply", ({payload}) => { handle(payload) })
+    .receive("ok", () => { })
     .receive("error", e => { console.log(e) })
 }
 

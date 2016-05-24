@@ -2,13 +2,8 @@ defmodule ChatBot.FSM.QA do
 
   use GenFSM
 
-  def start_link(questions=[h|t]) do
-    state =
-      %{
-        pending: h,
-        unanswered: t,
-        answered: []
-      }
+  def start_link(questions) do
+    state = %{q: questions, a: []}
     GenFSM.start_link(__MODULE__, state)
   end
 
@@ -20,11 +15,28 @@ defmodule ChatBot.FSM.QA do
     GenFSM.send_event(pid, payload)
   end
 
-  # Maybe I should just pass pid every time...
-  def waiting({sender, ref, msg}, state) do
-    # Let's begin with echo'ing the messages that come in
-    send sender, {:respond, ref, msg}
+  def waiting({sender, ref, nil}, state=%{q: [h|_]}) do
+    send sender, {:respond, ref, h}
     {:next_state, :waiting, state}
+  end
+
+  def waiting({sender, ref, msg}, %{q: [h|t], a: as}) do
+      case t do
+        [] ->
+          state = %{q: [], a: [{h, msg}|as]}
+          send sender, {:ack, ref}
+          {:next_state, :complete, state}
+
+        [next|_] ->
+          state = %{q: t, a: [{h, msg}|as]}
+          send sender, {:respond, ref, next}
+          {:next_state, :waiting, state}
+      end
+  end
+
+  def complete({sender, ref, _}, state) do
+    send sender, {:respond, ref, "I'm done with you..."}
+    {:next_state, :complete, state}
   end
 
 end

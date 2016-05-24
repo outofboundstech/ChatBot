@@ -18,12 +18,6 @@ defmodule ChatBot.RoomChannel do
   end
 
   def handle_in("message", payload, socket) do
-    # Read user_id from socket assigns
-    # Do I need to code defensively and check to see if this user is
-    #   authorized for this channel after joining?
-    # Read FSM state from socket assigns
-    # Is an existing FSM in the :waiting state? Then send the message along
-
     case Map.pop socket.assigns, :fsm do
       {pid, _} when is_pid(pid) ->
         QA.request(pid, {self, socket_ref(socket), payload})
@@ -32,15 +26,18 @@ defmodule ChatBot.RoomChannel do
           "Where do you live?"]
         {:ok, pid} = QA.start_link(questions)
         socket = assign(socket, :fsm, pid)
-        QA.request(pid, {self, socket_ref(socket), payload})
+        QA.request(pid, {self, socket_ref(socket), nil})
     end
-
     {:noreply, socket}
   end
 
+def handle_info({:ack, ref}, socket) do
+  reply ref, {:ok, %{}}
+  {:noreply, socket}
+end
+
   def handle_info({:respond, ref, payload}, socket) do
-    # broadcast(socket, "message", %{payload: payload})
-    reply ref, {:ok, %{payload: payload}}
+    reply ref, {:reply, %{payload: payload}}
     {:noreply, socket}
   end
 
