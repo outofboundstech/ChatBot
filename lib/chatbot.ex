@@ -9,8 +9,12 @@ defmodule ChatBot do
     children = [
       # Start the endpoint when the application starts
       supervisor(ChatBot.Endpoint, []),
+      # Start the Ecto repository
+      supervisor(ChatBot.Repo, []),
       # Here you could define other workers and supervisors as children
       # worker(ChatBot.Worker, [arg1, arg2, arg3]),
+      # worker(ChatBot.FSM.QA, [["What's your name?", "How old are you?",
+      #   "Where do you live?"]])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

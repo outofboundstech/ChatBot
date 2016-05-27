@@ -1,11 +1,17 @@
 defmodule ChatBot.UserSocket do
   use Phoenix.Socket
 
+  import Logger
+
+  alias Phoenix.Token, as: Token
+
   ## Channels
-  # channel "rooms:*", ChatBot.RoomChannel
+  channel "rooms:lobby", ChatBot.RoomChannel
+  # channel "chats:lobby", ChatBot.ChatChannel
 
   ## Transports
-  transport :websocket, Phoenix.Transports.WebSocket
+  transport :websocket, Phoenix.Transports.WebSocket,
+    timeout: 45_000
   # transport :longpoll, Phoenix.Transports.LongPoll
 
   # Socket params are passed from the client and can
@@ -19,8 +25,15 @@ defmodule ChatBot.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket) do
-    {:ok, socket}
+  def connect(%{"bearer_token" => bearer_token}, socket) do
+    # If bearer_token is present in params then assign token to socket
+    case Token.verify(socket, "uid", bearer_token) do
+      {:ok, uid} ->
+        # Spin off a task that obtains user data from LTS and set user on socket
+        {:ok, assign(socket, :uid, uid)}
+      {:error, uid} ->
+        :error
+    end
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
