@@ -61,15 +61,15 @@ let channel = socket.channel("rooms:lobby", {})
 channel.onClose( () => { connected(false), log("Connection closed") })
 channel.onError( () => { connected(false), log("Connection dropped") })
 
-channel.on("message", ({payload}) => { handle(payload) })
+channel.on("ping", ({payload}) => { handle(payload) })
 
 channel.join()
   .receive("ok", resp => { connected(true), log("Connection established") })
   .receive("error", resp => { log("Unable to connect") })
 
 function transport(payload) {
-  channel.push("message", payload)
-    .receive("reply", ({payload}) => { handle(payload) })
+  channel.push("ping", payload)
+    .receive("pong", ({payload}) => { handle(payload) })
     .receive("ok", () => { })
     .receive("error", e => { console.log(e) })
 }

@@ -11,33 +11,32 @@ defmodule ChatBot.RoomChannel do
     end
   end
 
-  # Channels can be used in a request/response fashion
-  # by sending replies to requests from the client
-  def handle_in("ping", payload, socket) do
-    {:reply, {:pong, %{payload: payload}}, socket}
-  end
-
-  def handle_in("message", payload, socket) do
-    case Map.pop socket.assigns, :fsm do
-      {pid, _} when is_pid(pid) ->
-        QA.request(pid, {self, socket_ref(socket), payload})
-      {nil, _} ->
-        questions = ["What's your name?", "How old are you?",
-          "Where do you live?"]
-        {:ok, pid} = QA.start_link(questions)
-        socket = assign(socket, :fsm, pid)
-        QA.request(pid, {self, socket_ref(socket), nil})
-    end
+  def handle_in("ping", "picture", socket) do
+    questions = ["What's your name?", "How old are you?",
+      "Where do you live?"]
+    {:ok, pid} = QA.start_link(questions)
+    socket = assign(socket, :fsm, pid)
+    QA.request(pid, {self, socket_ref(socket), nil})
     {:noreply, socket}
   end
 
-def handle_info({:ack, ref}, socket) do
-  reply ref, {:ok, %{}}
-  {:noreply, socket}
-end
+  def handle_in("ping", payload, socket) do
+    case Map.pop socket.assigns, :fsm do
+      {pid, _} when is_pid(pid) ->
+        QA.request(pid, {self, socket_ref(socket), payload})
+        {:noreply, socket}
+      {nil, _} ->
+        {:reply, {:pong, %{payload: payload}}, socket}
+    end
+  end
+
+  def handle_info({:ack, ref}, socket) do
+    reply ref, {:ok, %{}}
+    {:noreply, socket}
+  end
 
   def handle_info({:respond, ref, payload}, socket) do
-    reply ref, {:reply, %{payload: payload}}
+    reply ref, {:pong, %{payload: payload}}
     {:noreply, socket}
   end
 
