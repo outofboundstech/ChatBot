@@ -13,6 +13,10 @@ defmodule ChatBot.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :webhook do
+    plug :accepts, ["json"]
+  end
+
   scope "/", ChatBot do
     pipe_through :browser # Use the default browser stack
 
@@ -24,5 +28,12 @@ defmodule ChatBot.Router do
      pipe_through :api
 
      post "/authenticate", PageController, :authenticate
+  end
+
+  scope "/webhook", ChatBot do
+    pipe_through :webhook
+
+    get "/fb-messenger", ChatController, :fb_messenger_verify
+    post "/fb-messenger", ChatController, :fb_messenger
   end
 end
