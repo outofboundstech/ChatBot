@@ -13,6 +13,8 @@ defmodule ChatBot.ChatController do
   end
 
   def fb_messenger(conn, params) do
+    # Compose key of {:fb_messenger, uid}
+    # Lookup FSM in ETS using key
     conn
   end
 end
