@@ -17,7 +17,7 @@ defmodule ChatBot.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [mod: {ChatBot, []},
-     applications: [:phoenix, :phoenix_html, :cowboy, :logger, :gettext, :stash]]
+     applications: [:phoenix, :phoenix_html, :cowboy, :logger, :gettext, :httpoison, :stash]]
   end
 
   # Specifies which paths to compile per environment.
@@ -35,6 +35,7 @@ defmodule ChatBot.Mixfile do
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:gettext, "~> 0.9"},
      {:cowboy, "~> 1.0"},
+     {:httpoison, "~> 0.8.0"},
      {:gen_fsm, "~> 0.1.0"},
      {:stash, git: "https://github.com/outofboundstech/stash.git"}]
   end
