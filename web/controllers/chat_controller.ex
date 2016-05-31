@@ -1,6 +1,8 @@
 defmodule ChatBot.ChatController do
   use ChatBot.Web, :controller
 
+  require Logger
+
   @fb_page_access_token System.get_env("FB_PAGE_ACCESS_TOKEN")
 
   def fb_messenger_verify(conn, params) do
@@ -32,6 +34,10 @@ defmodule ChatBot.ChatController do
     fb_send_text_message(id, text)
   end
 
+  defp fb_handle_message(msg) do
+    Logger.info("Unhandled message:\n#{inspect msg}")
+  end
+
   defp fb_send_text_message(recipient, text) do
     payload = %{
       recipient: %{id: recipient},
@@ -43,6 +49,6 @@ defmodule ChatBot.ChatController do
 
     url = "https://graph.facebook.com/v2.6/me/messages?access_token=#{@fb_page_access_token}"
     headers = [{"Content-Type", "application/json"}]
-    HTTPoison.post!(url, Poison.encode!(payload), headers)
+    # HTTPoison.post!(url, Poison.encode!(payload), headers)
   end
 end
