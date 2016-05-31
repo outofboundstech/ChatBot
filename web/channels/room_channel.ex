@@ -23,13 +23,16 @@ defmodule ChatBot.RoomChannel do
 
   def handle_in("ping", payload, socket=%{assigns: %{fsm: pid}}) when is_pid(pid) do
     case QA.request(pid, {self, payload}) do
-      :ok ->
-        {:reply, {:ok, %{}}, socket}
+      {:reply, response} ->
+        {:reply, {:pong, %{payload: response}}, socket}
+
       :final ->
         # Do some clean-up
         {:reply, {:ok, %{}}, socket}
-      {:reply, response} ->
-        {:reply, {:pong, %{payload: response}}, socket}
+
+      _ ->
+        # Includes :ok, acknowledge receipt
+        {:reply, {:ok, %{}}, socket}
     end
   end
 
