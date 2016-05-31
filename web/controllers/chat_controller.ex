@@ -13,8 +13,35 @@ defmodule ChatBot.ChatController do
   end
 
   def fb_messenger(conn, params) do
-    # Compose key of {:fb_messenger, uid}
-    # Lookup FSM in ETS using key
+    ## Here's what I'll receive:
+    #
+    # {
+    #   "object":"page",
+    #   "entry":[
+    #     {
+    #       "id":"PAGE_ID",
+    #       "time":1460245674269,
+    #       "messaging":[
+    #         {
+    #           "sender":{
+    #             "id":"USER_ID"
+    #           },
+    #           "recipient":{
+    #             "id":"PAGE_ID"
+    #           },
+    #           "timestamp":1460245672080,
+    #           "message":{
+    #             "mid":"mid.1460245671959:dad2ec9421b03d6f78",
+    #             "seq":216,
+    #             "text":"hello"
+    #           }
+    #         }
+    #       ]
+    #     }
+    #   ]
+    # }
+
+    IO.write(params)
     conn
   end
 end
