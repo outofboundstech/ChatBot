@@ -9,6 +9,10 @@ defmodule ChatBot.FSM.QA do
     GenFSM.start_link(__MODULE__, state)
   end
 
+  def stop(pid) do
+    GenFSM.stop(pid)
+  end
+
   def request(pid, msg) do
     GenFSM.sync_send_event(pid, msg)
   end
