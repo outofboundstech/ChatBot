@@ -3,7 +3,7 @@ defmodule ChatBot.FacebookController do
 
   require Logger
 
-  alias Chatbot.FSM.Registry
+  alias ChatBot.FSM.Registry
   alias ChatBot.FSM.QA
 
   @fb_page_access_token System.get_env("FB_PAGE_ACCESS_TOKEN")
@@ -58,6 +58,8 @@ defmodule ChatBot.FacebookController do
 
         :final ->
           # Do some clean-up
+          QA.stop(pid)
+          Registry.delete("fb-messenger", user_id)
           send_message(user_id, "Thanks a million!")
 
         _ ->
