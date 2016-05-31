@@ -31,7 +31,7 @@ defmodule ChatBot.UserSocket do
       {:ok, uid} ->
         # Spin off a task that obtains user data from LTS and set user on socket
         {:ok, assign(socket, :uid, uid)}
-      {:error, uid} ->
+      {:error, _uid} ->
         :error
     end
   end
