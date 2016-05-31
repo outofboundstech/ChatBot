@@ -1,11 +1,11 @@
-defmodule ChatBot.ChatController do
+defmodule ChatBot.FacebookController do
   use ChatBot.Web, :controller
 
   require Logger
 
   @fb_page_access_token System.get_env("FB_PAGE_ACCESS_TOKEN")
 
-  def fb_messenger_verify(conn, params) do
+  def verify(conn, params) do
     if params["hub.verify_token"] == "secret-token" do
       conn
       |> text(params["hub.challenge"])
@@ -16,7 +16,7 @@ defmodule ChatBot.ChatController do
     end
   end
 
-  def fb_messenger(conn, params) do
+  def handle_in(conn, params) do
     ## See the Facebook messaging API reference at
     #   https://developers.facebook.com/docs/messenger-platform/implementation
 
@@ -24,21 +24,21 @@ defmodule ChatBot.ChatController do
     |> Map.get("entry")
     |> hd()
     |> Map.get("messaging")
-    |> Enum.each(&fb_handle_message/1)
+    |> Enum.each(&handle/1)
 
     conn
     |> text("Ack")
   end
 
-  defp fb_handle_message(msg=%{"message" => %{"text" => text}, "sender" => %{"id" => id}}) do
-    fb_send_text_message(id, text)
+  defp handle(msg=%{"message" => %{"text" => text}, "sender" => %{"id" => id}}) do
+    send_message(id, text)
   end
 
-  defp fb_handle_message(msg) do
+  defp handle(msg) do
     Logger.info("Unhandled message:\n#{inspect msg}")
   end
 
-  defp fb_send_text_message(recipient, text) do
+  defp send_message(recipient, text) do
     payload = %{
       recipient: %{id: recipient},
 

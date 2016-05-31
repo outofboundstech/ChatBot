@@ -33,7 +33,7 @@ defmodule ChatBot.Router do
   scope "/webhook", ChatBot do
     pipe_through :webhook
 
-    get "/fb-messenger", ChatController, :fb_messenger_verify
-    post "/fb-messenger", ChatController, :fb_messenger
+    get "/fb-messenger", FacebookController, :verify
+    post "/fb-messenger", FacebookController, :handle_in
   end
 end
