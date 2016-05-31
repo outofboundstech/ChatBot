@@ -15,23 +15,26 @@ defmodule ChatBot.RoomChannel do
     questions = ["What's your name?", "How old are you?",
       "Where do you live?"]
     {:ok, pid} = QA.start_link(questions)
-    socket = assign(socket, :fsm, pid)
     {:reply, response} = QA.request(pid, nil)
+
+    socket = assign(socket, :fsm, pid)
     {:reply, {:pong, %{payload: response}}, socket}
   end
 
-  def handle_in("ping", payload, socket) do
-    case Map.get socket.assigns, :fsm do
-      pid when is_pid(pid) ->
-        case QA.request(pid, {self, payload}) do
-          {:reply, response} ->
-            {:reply, {:pong, %{payload: response}}, socket}
-          :ok ->
-            {:reply, {:ok, %{}}, socket}
-        end
-      nil ->
-        {:reply, {:pong, %{payload: payload}}, socket}
+  def handle_in("ping", payload, socket=%{assigns: %{fsm: pid}}) when is_pid(pid) do
+    case QA.request(pid, {self, payload}) do
+      :ok ->
+        {:reply, {:ok, %{}}, socket}
+      :final ->
+        # Do some clean-up
+        {:reply, {:ok, %{}}, socket}
+      {:reply, response} ->
+        {:reply, {:pong, %{payload: response}}, socket}
     end
+  end
+
+  def handle_in("ping", payload, socket) do
+    {:reply, {:pong, %{payload: payload}}, socket}
   end
 
   def handle_info({:ok, ref}, socket) do

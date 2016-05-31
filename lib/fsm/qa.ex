@@ -27,7 +27,7 @@ defmodule ChatBot.FSM.QA do
     case t do
       [] ->
         state = %{q: [], a: [{h, msg}|as]}
-        {:reply, :ok, :complete, state}
+        {:reply, :final, :complete, state}
 
       [next|_] ->
         state = %{q: t, a: [{h, msg}|as]}
@@ -38,7 +38,7 @@ defmodule ChatBot.FSM.QA do
   # Complete sync
 
   def complete(msg, _from, state) do
-    {:reply, :ok, :complete, :state}
+    {:reply, :final, :complete, :state}
   end
 
 end
