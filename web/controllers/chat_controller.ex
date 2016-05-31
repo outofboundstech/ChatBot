@@ -49,6 +49,6 @@ defmodule ChatBot.ChatController do
 
     url = "https://graph.facebook.com/v2.6/me/messages?access_token=#{@fb_page_access_token}"
     headers = [{"Content-Type", "application/json"}]
-    # HTTPoison.post!(url, Poison.encode!(payload), headers)
+    HTTPoison.post!(url, Poison.encode!(payload), headers)
   end
 end
