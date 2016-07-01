@@ -23,13 +23,6 @@ defmodule ChatBot.Router do
     get "/", PageController, :index
   end
 
-  # Other scopes may use custom stacks.
-  scope "/", ChatBot do
-     pipe_through :api
-
-     post "/authenticate", PageController, :authenticate
-  end
-
   scope "/webhook", ChatBot do
     pipe_through :webhook
 

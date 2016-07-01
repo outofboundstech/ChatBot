@@ -25,15 +25,8 @@ defmodule ChatBot.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(%{"bearer_token" => bearer_token}, socket) do
-    # If bearer_token is present in params then assign token to socket
-    case Token.verify(socket, "uid", bearer_token) do
-      {:ok, uid} ->
-        # Spin off a task that obtains user data from LTS and set user on socket
-        {:ok, assign(socket, :uid, uid)}
-      {:error, _uid} ->
-        :error
-    end
+  def connect(_params, socket) do
+    {:ok, socket}
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
