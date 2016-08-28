@@ -24,3 +24,4 @@ erl_crash.dump
 /config/prod.secret.exs
 web/elm/elm-stuff/
 .DS_Store
+web/static/vendor/client.js

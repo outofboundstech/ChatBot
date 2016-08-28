@@ -1,18 +1,21 @@
-module Client where
+module Client exposing (..)
 
+import Json.Decode as Json
 
-import Effects exposing (Effects, Never)
+import Html.App as App
 import Html exposing (Attribute, Html, a, button, div, input, li, p, span, text, ul)
 import Html.Attributes exposing (attribute, class, disabled, href, id, placeholder, style, type', value)
-import Html.Events as Events exposing (on, onClick, keyCode, targetValue)
-import StartApp
-import Task
+import Html.Events as Events exposing (on, onClick, onInput, keyCode)
+
+import Phoenix.Socket
+import Phoenix.Channel
+import Phoenix.Push
 
 
 -- MODEL
 type alias Message =
   { from : String
-  , contents : String
+  , content : String
   }
 
 
@@ -24,57 +27,92 @@ type alias Model =
   { connected : Bool
   , draft : String
   , history : History
+  , phxSocket : Phoenix.Socket.Socket Msg
   }
 
 
-type Action
+initialModel : Model
+initialModel =
+  { connected = False
+  , draft = ""
+  , history = []
+  , phxSocket = initPhxSocket
+  }
+
+
+-- UPDATE
+type Msg
   = NoOp
-  | UpdateLinkStatus Bool
-  | UpdateDraft String
+  -- What is this?
+  | PhoenixMsg (Phoenix.Socket.Msg Msg)
+  | JoinChannel
+  | SetLinkStatus Bool
+  | SetDraft String
   | Send String
   | Receive String
   | Log String
 
 
--- UPDATE
-update : Action -> Model -> ( Model, Effects Action )
-update action model =
-  case action of
-    UpdateLinkStatus connected ->
-      ( { model | connected = connected }, Effects.none )
-    UpdateDraft message ->
-      ( { model | draft = message }, Effects.none )
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+  case msg of
+    PhoenixMsg msg ->
+      let
+        ( phxSocket, phxCmd ) =
+          Phoenix.Socket.update msg model.phxSocket
+      in
+        ( { model | phxSocket = phxSocket}, Cmd.map PhoenixMsg phxCmd )
+
+    JoinChannel ->
+      let
+        channel =
+          Phoenix.Channel.init "rooms:lobby"
+        (phxSocket, phxCmd) =
+          Phoenix.Socket.join channel model.phxSocket
+      in
+        ( { model | phxSocket = phxSocket }, Cmd.map PhoenixMsg phxCmd )
+
+    SetLinkStatus connected ->
+      ( { model | connected = connected }, Cmd.none )
+
+    SetDraft message ->
+      ( { model | draft = message }, Cmd.none )
+
     Send "" ->
       -- Silently ignore empty messages
-      ( model, Effects.none )
-    Send contents ->
+      ( model, Cmd.none )
+
+    Send content ->
       -- Send message off to the server (outbox.send)
       let
-        task =
-          Signal.send outbox.address contents
-          `Task.andThen` (\_ -> Task.succeed NoOp)
-        message = { from = "__client__", contents = contents }
+        -- task =
+        --   outbox content
+        --   `Task.andThen` (\_ -> Task.succeed NoOp)
+        message = { from = "__client__", content = content }
         history = message :: model.history
       in
-        ( { model | history = history, draft = "" }, task |> Effects.task )
-    Receive contents ->
+        ( { model | history = history, draft = "" }, Cmd.none ) -- task |> Cmd.task )
+
+    Receive content ->
       let
-        message = { from = "__server__", contents = contents }
+        message = { from = "__server__", content = content }
         history = message :: model.history
       in
-        ( { model | history = history } , Effects.none )
-    Log contents ->
+        ( { model | history = history } , Cmd.none )
+
+    Log content ->
       let
-        message = { from = "__system__", contents = contents }
+        message = { from = "__system__", content = content }
         history = message :: model.history
       in
-        ( { model | history = history } , Effects.none )
+        ( { model | history = history } , Cmd.none )
+
     NoOp ->
-      ( model, Effects.none )
+      ( model, Cmd.none )
 
 
 -- VIEW attributes
-scrollableStyle : Attribute
+scrollableStyle : Attribute Msg
 scrollableStyle =
   style
     [ ("height", "400px")
@@ -84,59 +122,51 @@ scrollableStyle =
 
 
 -- VIEW event helpers
-onInput : Signal.Address Action -> (String -> Action) -> Attribute
-onInput address action =
-  on "input" targetValue (\value -> Signal.message address (action value))
-
-
-onReturn : Signal.Address Action -> Action -> Attribute
-onReturn address action =
-  on "keypress" keyCode
-    (\code ->
-      if 13 == code then
-        Signal.message address action
-      else
-        Signal.message address NoOp
-    )
+onReturn : Msg -> Attribute Msg
+onReturn msg =
+  let
+    tagger = (\code -> if 13 == code then msg else NoOp)
+  in
+    on "keypress" (Json.map tagger keyCode)
 
 
 -- VIEW helper functions
-connectedView : Bool -> List Html
-connectedView isConnected =
-  if isConnected then
+connectedView : Model -> List (Html Msg)
+connectedView model =
+  if model.connected then
     [ span [ class "glyphicon glyphicon-ok" ] [ ] ]
   else
     [ span [ class "glyphicon glyphicon-remove" ] [ ] ]
 
 
-historyView : History -> List Html
-historyView history =
+historyView : Model -> List (Html Msg)
+historyView model =
   List.foldl
     (\msg acc  ->
       if "__system__" == msg.from then
-        (div [ class "alert" ] [ text msg.contents ]) :: acc
+        (div [ class "alert" ] [ text msg.content ]) :: acc
       else if "__server__" == msg.from then
-        (div [ class "alert alert-info text-right" ] [ text msg.contents ]) :: acc
+        (div [ class "alert alert-info text-right" ] [ text msg.content ]) :: acc
       else
-        (div [ class "alert alert-success text-left" ] [ text msg.contents ]) :: acc
+        (div [ class "alert alert-success text-left" ] [ text msg.content ]) :: acc
     )
     []
-    history
+    model.history
 
 
 -- VIEW
-view : Signal.Address Action -> Model -> Html
-view address model =
+view : Model -> Html Msg
+view model =
   div [ id "container" ]
-    [ div [ id "history", class "well", scrollableStyle ] (historyView model.history)
+    [ div [ id "history", class "well", scrollableStyle ] (historyView model)
     , div [ class "form-group input-group" ]
-      [ span [ class "input-group-addon" ] (connectedView model.connected)
+      [ span [ class "input-group-addon" ] (connectedView model)
       , input [ type' "text", placeholder "Enter your message...", class "form-control", value model.draft
-        , onInput address UpdateDraft
-        , onReturn address (Send model.draft)
+        , onInput (\value -> SetDraft value)
+        , onReturn (Send model.draft)
         ] []
       , div [ class "input-group-btn" ]
-        [ button [ class "btn btn-primary", disabled (not model.connected), onClick address (Send model.draft) ] [ text "Send" ]
+        [ button [ class "btn btn-primary", disabled (not model.connected), onClick (Send model.draft) ] [ text "Send" ]
         , button [ class "btn btn-primary dropdown-toggle", disabled (not model.connected), attribute "data-toggle" "dropdown" ]
           [ span [ class "caret"] []
           , span [ class "sr-only" ] [ text "Toggle Dropdown" ]
@@ -150,56 +180,36 @@ view address model =
 
 
 -- BOOKKEEPING
-init : ( Model, Effects Action )
+socketServer : String
+socketServer =
+  "ws://localhost:4000/socket/websocket"
+
+
+initPhxSocket : Phoenix.Socket.Socket Msg
+initPhxSocket =
+  Phoenix.Socket.init socketServer
+    |> Phoenix.Socket.withDebug
+
+
+init : ( Model, Cmd Msg )
 init =
-  ( { connected = False
-    , draft = ""
-    , history = []
-    }
-  , Effects.none
-  )
+  -- ( initialModel
+  -- , Cmd.batch JoinChannel
+  -- )
+  update JoinChannel initialModel
 
 
-app : StartApp.App Model
-app =
-  StartApp.start
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Phoenix.Socket.listen model.phxSocket PhoenixMsg
+
+
+
+main : Program Never
+main =
+  App.program
     { init = init
-    , inputs = [ inputs ]
     , update = update
     , view = view
+    , subscriptions = subscriptions
     }
-
-
-main : Signal.Signal Html
-main =
-  app.html
-
-
-port tasks : Signal (Task.Task Never ())
-port tasks =
-  app.tasks
-
-
--- INTEROP
-port connected : Signal Bool
-port inbox : Signal String
-port log : Signal String
-
-
-inputs : Signal Action
-inputs =
-  Signal.mergeMany
-    [ (Signal.map UpdateLinkStatus connected)
-    , (Signal.map Receive inbox)
-    , (Signal.map Log log)
-    ]
-
-
-outbox : Signal.Mailbox String
-outbox =
-  Signal.mailbox ""
-
-
-port transport : Signal String
-port transport =
-  outbox.signal
