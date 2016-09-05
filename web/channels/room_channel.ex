@@ -12,8 +12,11 @@ defmodule ChatBot.RoomChannel do
   end
 
   def handle_in("ping", "picture", socket) do
-    questions = ["What's your name?", "How old are you?",
-      "Where do you live?"]
+    questions = [
+      "Thank you for this image. We've forwarded the image to participating newsrooms. Make sure you delete this image from your phone, if possession of it puts you at risk. Did you take this image?",
+      "What story does this image tell?",
+      "Thanks again. Please delete this chat if the information puts you at risk."
+    ]
     {:ok, pid} = QA.start_link(questions)
     {:reply, response} = QA.request(pid, nil)
 
