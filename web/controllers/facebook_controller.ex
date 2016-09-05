@@ -36,10 +36,9 @@ defmodule ChatBot.FacebookController do
     # Set-up an FSM and start my question/answer cycle
     # Handle each of the attachments (download?)
     questions = [
-        "What do these pictures show?",
-        "Who do these pictures show?",
-        "Where did you take these pictures?",
-        "When did you take these pictures?"
+        "Thank you for this image. We've forwarded the image to participating newsrooms. Make sure you delete this image from your phone, if possession of it puts you at risk. Did you take this image?",
+        "What story does this image tell?",
+        "Thanks again. Please delete this chat if the information puts you at risk."
       ]
       {:ok, pid} = QA.start_link(questions)
       # What do I do when a previous FSM exists?
